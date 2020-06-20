@@ -15,7 +15,6 @@ spec:
     spec:
       containers:
       - name: image-classif-app
-        # Replace $GCLOUD_PROJECT with your project ID
         image: gcr.io/apple-assignment-280918/image-classif:latest
         # This app listens on port 8080 for web traffic by default.
         ports:
