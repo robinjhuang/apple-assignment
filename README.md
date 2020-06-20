@@ -26,4 +26,5 @@ Paginate 20 images at a time, sorted by order of prediction
 ## Deploy to GKE (Google Kubernetes Engine)
 
 `kubectl apply -f deployment.yaml`
+
 `kubectl get deployments` 
