@@ -8,7 +8,6 @@ from flask import Flask,json,jsonify,request
 import io
 from google.cloud import storage
 import os
-from google.cloud import firestore
 import datetime
 import psycopg2
 import json
