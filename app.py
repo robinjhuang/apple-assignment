@@ -1,5 +1,4 @@
 
-from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications import imagenet_utils
 from PIL import Image
@@ -11,18 +10,11 @@ import os
 import datetime
 import psycopg2
 import json
+from tensorflow.keras.models import load_model
 
 # initialize our Flask application and the Keras model
-model = None
 app = Flask(__name__)
-
-def load_model():
-    # load the pre-trained Keras model (here we are using a model
-    # pre-trained on ImageNet and provided by Keras, but you can
-    # substitute in your own networks just as easily)
-    global model
-    model = ResNet50(weights="imagenet")
-
+model = load_model('resnet.h5', compile=False)
 
 def prepare_image(image, target):
     # if the image mode is not RGB, convert it
@@ -75,7 +67,8 @@ def predict():
     # initialize the data dictionary that will be returned from the
     # view
     data = {"success": False}
-
+    print("POST: PREDICT")
+    print(request.method)
     # ensure an image was properly uploaded to our endpoint
     if request.method == "POST":
         if request.files.get("image"):
@@ -134,17 +127,13 @@ def get_history():
     except Exception as e:
         print ("I am unable to connect to the database")
         print (e)
+        return jsonify(e)
 
 
 @app.route("/")
 def welcome():
     return "Welcome to Robin Huang's Image Classifier Project"
 
-def start_app():
-    print(("* Loading Keras model and Flask starting server..."
-        "please wait until server has fully started"))
-    load_model()
-    app.run(host='0.0.0.0', debug=True,port=int(os.environ.get('PORT', 8080))) # TODO remove debug when deploying
-
 if __name__ == "__main__":
-    start_app()
+    app.run(host='0.0.0.0', debug=True,port=int(os.environ.get('PORT', 8080))) # TODO remove debug when deploying
+    
