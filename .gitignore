@@ -94,6 +94,9 @@ ipython_config.py
 # pyenv
 .python-version
 
+# GCP stuff
+cloud_sql_proxy
+
 # celery beat schedule file
 celerybeat-schedule
 
