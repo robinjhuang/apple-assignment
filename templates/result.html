@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <title>Image classification results</title>
+  </head>
+  <body>
+    {% block container %}
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Image</th>
+            <th>Date</th>
+            <th>Predictions</th>
+        </tr>
+        {% for result in results %}
+            <tr>
+                <td>{{ result['name']}}</td>
+                <td><img style="height:50px; width: 50px" src="{{ result.url}}"></img></td>
+                <td>{{ result['time']}}</td>
+                <td>{{ result['predictions']}}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    {% endblock %}
+  </body>
+</html>

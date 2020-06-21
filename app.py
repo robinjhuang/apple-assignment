@@ -3,7 +3,7 @@ from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications import imagenet_utils
 from PIL import Image
 import numpy as np
-from flask import Flask,json,jsonify,request
+from flask import Flask,json,jsonify,request, render_template
 import io
 from google.cloud import storage
 import os
@@ -12,8 +12,8 @@ import psycopg2
 import json
 from tensorflow.keras.models import load_model
 
-# initialize our Flask application and the Keras model
-app = Flask(__name__)
+# initialize our Flask application and load the Keras model
+app = Flask(__name__, template_folder='templates')
 model = load_model('resnet.h5', compile=False)
 
 def prepare_image(image, target):
@@ -78,7 +78,7 @@ def predict():
                 print("Classifying image " + image_file.filename)
                 image = image_file.read()
 
-                gcs_url = None
+                gcs_url = ''
                 try:
                     gcs_url = upload_to_gcs(image, image_file.filename, image_file.content_type)
                 except Exception as e:
@@ -91,14 +91,12 @@ def predict():
                 # preprocess the image and prepare it for classification
                 image = prepare_image(image, target=(224, 224))
 
-                # classify the input image and then initialize the list
-                # of predictions to return to the client
+                # classify the input image
                 preds = model.predict(image)
                 results = imagenet_utils.decode_predictions(preds)
                 data["predictions"] = []
 
-                # loop over the results and add them to the list of
-                # returned predictions
+                # loop over the results and build predictions
                 for (imagenetID, label, prob) in results[0]:
                     r = {"label": label, "probability": float(prob)}
                     data["predictions"].append(r)
@@ -109,30 +107,47 @@ def predict():
             except Exception as e:
                 print("Error occured")
                 print(e)
+
     # return the data dictionary as a JSON response
-    
     return jsonify(data)
 
 @app.route("/history", methods=['GET'])
 def get_history():
     if request.method == "GET":
         conn = None
+        data = None
+        try:
+            conn = psycopg2.connect(dbname='prediction', user='postgres', host='127.0.0.1', port=5432, password='images')
+            cursor = conn.cursor()
+            cursor.execute("SELECT * from image_classification ORDER BY create_at DESC LIMIT 20;")
+            data = cursor.fetchall()
+        except Exception as e:
+            print ("I am unable to connect to the database")
+            print (e)
+            return jsonify(e)
 
-    try:
-        conn = psycopg2.connect(dbname='prediction', user='postgres', host='127.0.0.1', port=5432, password='images')
-        cursor = conn.cursor()
-        cursor.execute("SELECT * from image_classification ORDER BY create_at DESC LIMIT 20;")
-        data = cursor.fetchall()
-        return jsonify(data)
-    except Exception as e:
-        print ("I am unable to connect to the database")
-        print (e)
-        return jsonify(e)
+        results = []
+        
+        for res in data:
+            print(res)
+        
+            results.append({
+                "id": res[0], 
+                "name": res[1], 
+                "url": res[2], 
+                "time": datetime.datetime.fromtimestamp(res[3]).strftime("%A, %B %d, %Y %I:%M:%S"), 
+                "predictions": res[4]
+            })
+        
+
+        print(results)
+
+        return render_template('result.html', results=results)
 
 
 @app.route("/")
 def welcome():
-    return "Welcome to Robin Huang's Image Classifier Project"
+    return "Welcome to Robin Huang's Image Classifier Service"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True,port=int(os.environ.get('PORT', 8080))) # TODO remove debug when deploying
