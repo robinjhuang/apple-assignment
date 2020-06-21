@@ -116,10 +116,20 @@ def get_history():
     if request.method == "GET":
         conn = None
         data = None
+
+        # offset params
+        offset = 0
+        limit = 20
+        for param, val in request.args.items():
+            if param == "offset":
+                offset = val
+            elif param == "limit":
+                limit = val
+
         try:
             conn = psycopg2.connect(dbname='prediction', user='postgres', host='127.0.0.1', port=5432, password='images')
             cursor = conn.cursor()
-            cursor.execute("SELECT * from image_classification ORDER BY create_at DESC LIMIT 20;")
+            cursor.execute("SELECT * from image_classification ORDER BY create_at DESC OFFSET %s LIMIT %s;", (offset, limit))
             data = cursor.fetchall()
         except Exception as e:
             print ("I am unable to connect to the database")
@@ -129,8 +139,6 @@ def get_history():
         results = []
         
         for res in data:
-            print(res)
-        
             results.append({
                 "id": res[0], 
                 "name": res[1], 
@@ -138,9 +146,6 @@ def get_history():
                 "time": datetime.datetime.fromtimestamp(res[3]).strftime("%A, %B %d, %Y %I:%M:%S"), 
                 "predictions": res[4]
             })
-        
-
-        print(results)
 
         return render_template('result.html', results=results)
 
