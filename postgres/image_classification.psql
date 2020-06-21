@@ -1,0 +1,7 @@
+CREATE TABLE image_classification (
+    id SERIAL PRIMARY KEY,
+    image_name TEXT, 
+    gcs_url TEXT, 
+    created_at INTEGER,
+    classification_results JSON,
+);

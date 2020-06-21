@@ -8,20 +8,23 @@
 1. Dockerize
 1. Deploy to GKE
 
-
-# Database
+## Database
 
 Images are stored in GCS (Google Cloud Storage)
 
-SQL DB 
+SQL DB
 
 primary_key, image_name (text), gcs_url (text), create_at (integer),  
 
-
-# Frontend
+## Frontend
 
 Paginate 20 images at a time, sorted by order of prediction
 
+## Rebuild Container
+
+After code changes:
+
+`gcloud builds submit --tag gcr.io/project-id/apple-assignment .`
 
 ## Deploy to GKE (Google Kubernetes Engine)
 
