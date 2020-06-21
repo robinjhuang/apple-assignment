@@ -24,10 +24,12 @@ Paginate 20 images at a time, sorted by order of prediction
 
 After code changes:
 
-`gcloud builds submit --tag gcr.io/project-id/apple-assignment .`
+`gcloud builds submit --tag gcr.io/apple-assignment-280918/image-classif .`
 
 ## Deploy to GKE (Google Kubernetes Engine)
 
 `kubectl apply -f deployment.yaml`
 
-`kubectl get deployments` 
+`kubectl get deployments`
+
+`kubectl describe services`
