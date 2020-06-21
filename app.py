@@ -8,10 +8,13 @@ from flask import Flask,json,jsonify,request
 import io
 from google.cloud import storage
 import os
+from google.cloud import firestore
+import datetime
+import psycopg2
+import json
 
 # initialize our Flask application and the Keras model
 model = None
-storage_client = None
 app = Flask(__name__)
 
 def load_model():
@@ -44,7 +47,27 @@ def upload_to_gcs(image_data, filename, content_type):
     blob = bucket.blob(filename)
     blob.upload_from_string(image_data, content_type=content_type)
 
-    print(blob.public_url)
+    return blob.public_url
+
+def upload_to_sql(image_name, gcs_url, classification_json):
+    '''
+    instance_name = "image-classification"
+    db_name = "prediction"
+    table_name = "image_classification"
+    '''
+    print("Uploading image results " + image_name)
+    conn = None
+
+    try:
+        conn = psycopg2.connect(dbname='prediction', user='postgres', host='127.0.0.1', port=5432, password='images')
+        milliseconds_since_epoch = int(datetime.datetime.now().timestamp())
+        cursor = conn.cursor()
+        json_str = json.dumps(classification_json)
+        cursor.execute("INSERT INTO image_classification (id, image_name, gcs_url, create_at, classification_results) VALUES(DEFAULT, %s, %s, %s, %s);", (image_name, gcs_url, milliseconds_since_epoch, json_str))
+        conn.commit()
+    except Exception as e:
+        print ("I am unable to connect to the database")
+        print (e)
 
 
 @app.route("/predict", methods=['POST'])
@@ -60,7 +83,7 @@ def predict():
             print(request.form)
             image_file = request.files["image"]
             image = image_file.read()
-            upload_to_gcs(image, image_file.filename, image_file.content_type)
+            gcs_url = upload_to_gcs(image, image_file.filename, image_file.content_type)
 
             image = Image.open(io.BytesIO(image))
 
@@ -81,9 +104,27 @@ def predict():
 
             # indicate that the request was a success
             data["success"] = True
+            upload_to_sql(image_file.filename, gcs_url, data["predictions"])
 
     # return the data dictionary as a JSON response
+    
     return jsonify(data)
+
+@app.route("/history", methods=['GET'])
+def get_history():
+    if request.method == "GET":
+        conn = None
+
+    try:
+        conn = psycopg2.connect(dbname='prediction', user='postgres', host='127.0.0.1', port=5432, password='images')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * from image_classification;")
+        data = cursor.fetchone()
+        return jsonify(data)
+    except Exception as e:
+        print ("I am unable to connect to the database")
+        print (e)
+
 
 @app.route("/")
 def welcome():
