@@ -10,6 +10,7 @@ gast==0.3.3
 gevent==20.6.2
 google-api-core==1.21.0
 google-auth==1.18.0
+google-auth-httplib2==0.0.3
 google-auth-oauthlib==0.4.1
 google-cloud-core==1.3.0
 google-cloud-storage==1.29.0
@@ -20,6 +21,7 @@ greenlet==0.4.16
 grpcio==1.29.0
 gunicorn==20.0.4
 h5py==2.10.0
+httplib2==0.18.1
 idna==2.9
 isort==4.3.21
 itsdangerous==1.1.0
@@ -34,6 +36,7 @@ oauthlib==3.1.0
 opt-einsum==3.2.1
 Pillow==7.1.2
 protobuf==3.12.2
+psycopg2-binary==2.8.5
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pylint==2.5.3
@@ -49,6 +52,7 @@ tensorflow==2.2.0
 tensorflow-estimator==2.2.0
 termcolor==1.1.0
 toml==0.10.1
+uritemplate==3.0.1
 urllib3==1.25.9
 Werkzeug==1.0.1
 wrapt==1.12.1
