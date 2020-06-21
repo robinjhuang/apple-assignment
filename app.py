@@ -54,7 +54,7 @@ def upload_to_sql(image_name, gcs_url, classification_json):
     db_name = "prediction"
     table_name = "image_classification"
     '''
-    print("Uploading image results " + image_name)
+    print("Uploading image results to postgres " + image_name)
     conn = None
 
     try:
@@ -64,6 +64,7 @@ def upload_to_sql(image_name, gcs_url, classification_json):
         json_str = json.dumps(classification_json)
         cursor.execute("INSERT INTO image_classification (id, image_name, gcs_url, create_at, classification_results) VALUES(DEFAULT, %s, %s, %s, %s);", (image_name, gcs_url, milliseconds_since_epoch, json_str))
         conn.commit()
+        print("Successfully uploaded to postgres")
     except Exception as e:
         print ("I am unable to connect to the database")
         print (e)
@@ -79,32 +80,42 @@ def predict():
     if request.method == "POST":
         if request.files.get("image"):
             # read the image in PIL format
-            print(request.form)
-            image_file = request.files["image"]
-            image = image_file.read()
-            gcs_url = upload_to_gcs(image, image_file.filename, image_file.content_type)
+            try:
+                image_file = request.files["image"]
+                print("Classifying image " + image_file.filename)
+                image = image_file.read()
 
-            image = Image.open(io.BytesIO(image))
+                gcs_url = None
+                try:
+                    gcs_url = upload_to_gcs(image, image_file.filename, image_file.content_type)
+                except Exception as e:
+                    print("Could not upload to GCS")
+                    print(e)
+                    raise e
+                
+                image = Image.open(io.BytesIO(image))
 
-            # preprocess the image and prepare it for classification
-            image = prepare_image(image, target=(224, 224))
+                # preprocess the image and prepare it for classification
+                image = prepare_image(image, target=(224, 224))
 
-            # classify the input image and then initialize the list
-            # of predictions to return to the client
-            preds = model.predict(image)
-            results = imagenet_utils.decode_predictions(preds)
-            data["predictions"] = []
+                # classify the input image and then initialize the list
+                # of predictions to return to the client
+                preds = model.predict(image)
+                results = imagenet_utils.decode_predictions(preds)
+                data["predictions"] = []
 
-            # loop over the results and add them to the list of
-            # returned predictions
-            for (imagenetID, label, prob) in results[0]:
-                r = {"label": label, "probability": float(prob)}
-                data["predictions"].append(r)
+                # loop over the results and add them to the list of
+                # returned predictions
+                for (imagenetID, label, prob) in results[0]:
+                    r = {"label": label, "probability": float(prob)}
+                    data["predictions"].append(r)
 
-            # indicate that the request was a success
-            data["success"] = True
-            upload_to_sql(image_file.filename, gcs_url, data["predictions"])
-
+                # indicate that the request was a success
+                data["success"] = True
+                upload_to_sql(image_file.filename, gcs_url, data["predictions"])
+            except Exception as e:
+                print("Error occured")
+                print(e)
     # return the data dictionary as a JSON response
     
     return jsonify(data)
@@ -117,8 +128,8 @@ def get_history():
     try:
         conn = psycopg2.connect(dbname='prediction', user='postgres', host='127.0.0.1', port=5432, password='images')
         cursor = conn.cursor()
-        cursor.execute("SELECT * from image_classification;")
-        data = cursor.fetchone()
+        cursor.execute("SELECT * from image_classification ORDER BY create_at DESC LIMIT 20;")
+        data = cursor.fetchall()
         return jsonify(data)
     except Exception as e:
         print ("I am unable to connect to the database")
@@ -129,8 +140,11 @@ def get_history():
 def welcome():
     return "Welcome to Robin Huang's Image Classifier Project"
 
-if __name__ == "__main__":
+def start_app():
     print(("* Loading Keras model and Flask starting server..."
         "please wait until server has fully started"))
     load_model()
     app.run(host='0.0.0.0', debug=True,port=int(os.environ.get('PORT', 8080))) # TODO remove debug when deploying
+
+if __name__ == "__main__":
+    start_app()
