@@ -16,6 +16,7 @@ spec:
       containers:
       - name: image-classif-app
         image: gcr.io/apple-assignment-280918/image-classif:latest
+        imagePullPolicy: "Always"
         # This app listens on port 8080 for web traffic by default.
         ports:
         - containerPort: 8080
