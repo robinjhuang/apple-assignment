@@ -41,11 +41,7 @@ def upload_to_gcs(image_data, filename, content_type):
     return blob.public_url
 
 def upload_to_sql(image_name, gcs_url, classification_json):
-    '''
-    instance_name = "image-classification"
-    db_name = "prediction"
-    table_name = "image_classification"
-    '''
+    
     print("Uploading image results to postgres " + image_name)
     conn = None
 
@@ -67,8 +63,7 @@ def predict():
     # initialize the data dictionary that will be returned from the
     # view
     data = {"success": False}
-    print("POST: PREDICT")
-    print(request.method)
+
     # ensure an image was properly uploaded to our endpoint
     if request.method == "POST":
         if request.files.get("image"):
